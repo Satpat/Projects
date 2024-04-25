@@ -1,0 +1,56 @@
+---
+title: "Scrape and Scatter"
+author: "Satyaveer Pattanaik"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages
+```{r 1}
+pacman::p_load(tidyverse, rvest, janitor, prismatic, ggrepel)
+```
+
+```{r 2}
+#fbref url
+url <- "https://fbref.com/en/comps/9/Premier-League-Stats"
+
+#read_html to scrape the items from the url
+full_table <- read_html(url, as.data.frame=T, stringAsFactors=T)
+
+prem <- full_table %>%
+  html_nodes("table") %>%
+  .[[1]] %>%
+  html_table(fill=T)
+
+```
+
+```{r 3}
+max_goals <- max(prem$GF)
+
+prem %>%
+  ggplot(aes(x = xG, y = GF, label = Squad)) +
+  geom_point(aes(fill = "red", color = after_scale(clr_darken(fill, 0.3))), 
+             shape = 21, alpha = 0.75, size = 3) +
+  #geom_smooth(method = "lm", color = 'gray25', fill = "gray20") +
+  geom_text_repel(size = 2.5, color = "white", min.segment.length = unit(0.1, "lines")) +
+  geom_abline(aes(color = "white", intercept = 0, slope = 1)) +
+  coord_fixed(ratio = 1, xlim = c(0, max_goals), ylim = c(0, max_goals), clip = "off") +
+  theme(
+    legend.position = "none",
+    plot.background = element_rect(fill = "gray15", colour = "gray15"),
+    panel.background = element_rect(fill = "gray15", colour = "gray15"),
+    panel.grid.major = element_line(colour = "gray20"),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "lightgrey"),
+    axis.text = element_text(colour = "lightgrey"),
+    axis.title = element_text(colour = "lightgrey"),
+    plot.title = element_text(colour = "white", hjust = 0.5, face = "bold", size = 15),
+    plot.subtitle = element_text(colour = "white", hjust = 0.5, face = "bold", size = 8)
+  ) +
+  labs(title = "Goals vs Expected Goals", subtitle = "2022-23 Season so far")
+```
+
